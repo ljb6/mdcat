@@ -1,2 +1,7 @@
-mdcat:
-	clang -o mdcat mdcat.c
+all: mdcat
+
+clean:
+	rm -rf mdcat
+
+mdcat: mdcat.c
+	gcc -o mdcat mdcat.c
