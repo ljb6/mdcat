@@ -2,9 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-void process_file(const char *filename)
+int process_file(const char *filename)
 {
-  printf("Filename: %s\n", filename);
+  FILE *fptr;
+
+  fptr = fopen(filename, "r");
+
+  if (fptr == NULL)
+  {
+    fprintf(stderr, "Error while opening file %s\n", filename);
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
 }
 
 int main(int argc, char *argv[])
