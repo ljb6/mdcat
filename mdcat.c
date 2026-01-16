@@ -14,6 +14,11 @@ int process_file(const char *filename)
     return EXIT_FAILURE;
   }
 
+  if (strstr(filename, ".md") == NULL)
+  {
+    fprintf(stderr, "Invalid file format. Use a .md file\n");
+  }
+
   return EXIT_SUCCESS;
 }
 
