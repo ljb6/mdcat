@@ -4,9 +4,7 @@
 
 int process_file(const char *filename)
 {
-  FILE *fptr;
-
-  fptr = fopen(filename, "r");
+  FILE *fptr = fopen(filename, "r");
 
   if (fptr == NULL)
   {
@@ -19,6 +17,7 @@ int process_file(const char *filename)
     fprintf(stderr, "Invalid file format. Use a .md file\n");
   }
 
+  fclose(fptr);
   return EXIT_SUCCESS;
 }
 
