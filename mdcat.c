@@ -4,13 +4,21 @@
 
 #define MAX_LINE_LENGTH 4096
 
-void process_line(const char *line)
+typedef struct
+{
+  int is_code_block;
+  int is_quote_block;
+  int identation_level;
+} MarkdownContext;
+
+void process_line(const char *line, MarkdownContext *ctx)
 {
 }
 
 int process_fptr(FILE *fptr)
 {
   char line[MAX_LINE_LENGTH];
+  MarkdownContext ctx = {0};
 
   while (fgets(line, sizeof(line), fptr))
   {
@@ -22,7 +30,7 @@ int process_fptr(FILE *fptr)
       return EXIT_FAILURE;
     }
 
-    process_line(line);
+    process_line(line, &ctx);
   }
 
   return EXIT_SUCCESS;
