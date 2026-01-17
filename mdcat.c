@@ -4,6 +4,12 @@
 
 #define MAX_LINE_LENGTH 4096
 
+#define ANSI_RESET "\033[0m"
+#define ANSI_BOLD "\033[1m"
+#define ANSI_CYAN "\033[36m"
+#define ANSI_YELLOW "\033[33m"
+#define ANSI_BLUE "\033[34m"
+
 typedef struct
 {
   int is_code_block;
@@ -11,8 +17,50 @@ typedef struct
   int identation_level;
 } MarkdownContext;
 
+void render_header(const char *line, int level)
+{
+  const char *color;
+
+  switch (level)
+  {
+  case 1:
+    color = ANSI_BLUE;
+    break;
+  case 2:
+    color = ANSI_CYAN;
+    break;
+  case 3:
+    color = ANSI_YELLOW;
+    break;
+  default:
+    color = ANSI_RESET;
+    break;
+  }
+
+  const char *fline = line + level + 1;
+  printf("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
+}
+
 void process_line(const char *line, MarkdownContext *ctx)
 {
+  /* code block logic*/
+  if (ctx->is_code_block)
+  {
+    return;
+  }
+
+  if (line[0] == '#')
+  {
+    int level = 0;
+    while (line[level] == '#')
+    {
+      level++;
+    }
+
+    render_header(line, level);
+  }
+
+  return;
 }
 
 int process_fptr(FILE *fptr)
