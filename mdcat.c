@@ -10,6 +10,16 @@
 #define ANSI_YELLOW "\033[33m"
 #define ANSI_BLUE "\033[34m"
 
+typedef enum
+{
+  TEXT,
+  BOLD_START,
+  BOLD_END,
+  ITALIC_START,
+  ITALIC_END,
+  LINE_BREAK,
+} TokenType;
+
 typedef struct
 {
   int is_code_block;
