@@ -12,13 +12,18 @@
 
 typedef enum
 {
-  TEXT,
-  BOLD_START,
-  BOLD_END,
-  ITALIC_START,
-  ITALIC_END,
-  LINE_BREAK,
-} TokenType;
+  BLOCK_HEADING,
+  BLOCK_PARAGRAPH,
+  BLOCK_CODE,
+  BLOCK_BLANK,
+} BlockType;
+
+typedef struct
+{
+  BlockType type;
+  int level;
+  char *content;
+} LineBlock;
 
 typedef struct
 {
