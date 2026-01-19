@@ -32,35 +32,56 @@ typedef struct
   int identation_level;
 } MarkdownContext;
 
-void render_header(const char *line, int level)
-{
-  const char *color;
+// void render_header(const char *line, int level)
+// {
+//   const char *color;
 
-  switch (level)
+//   switch (level)
+//   {
+//   case 1:
+//     color = ANSI_BLUE;
+//     break;
+//   case 2:
+//     color = ANSI_CYAN;
+//     break;
+//   case 3:
+//     color = ANSI_YELLOW;
+//     break;
+//   default:
+//     color = ANSI_RESET;
+//     break;
+//   }
+
+//   const char *fline = line + level + 1;
+//   printf("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
+// }
+
+void render_block(const LineBlock *line_block, const MarkdownContext *ctx) {}
+
+void process_line(char *line, MarkdownContext *ctx)
+{
+  LineBlock line_block = {0};
+
+  if (line[0] == '\n' || line[0] == '\r' || line[0] == '\0')
   {
-  case 1:
-    color = ANSI_BLUE;
-    break;
-  case 2:
-    color = ANSI_CYAN;
-    break;
-  case 3:
-    color = ANSI_YELLOW;
-    break;
-  default:
-    color = ANSI_RESET;
-    break;
+    line_block.type = BLOCK_BLANK;
+    render_block(&line_block, ctx);
+    return;
   }
 
-  const char *fline = line + level + 1;
-  printf("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
-}
+  if (strncmp(line, "```", 3) == 0)
+  {
+    line_block.type = BLOCK_CODE;
+    render_block(&line_block, ctx);
+    ctx->is_code_block = !ctx->is_code_block;
+    return;
+  }
 
-void process_line(const char *line, MarkdownContext *ctx)
-{
-  /* code block logic*/
   if (ctx->is_code_block)
   {
+    line_block.type = BLOCK_CODE;
+    line_block.content = line;
+    render_block(&line_block, ctx);
     return;
   }
 
@@ -68,14 +89,28 @@ void process_line(const char *line, MarkdownContext *ctx)
   {
     int level = 0;
     while (line[level] == '#')
-    {
       level++;
-    }
 
-    render_header(line, level);
+    if (line[level] == ' ')
+    {
+      line_block.level = level;
+      line_block.type = BLOCK_HEADING;
+      line_block.content = line + level + 1;
+    }
+    else
+    {
+      // Se for algo como "#Texto", tratamos como parágrafo comum
+      line_block.type = BLOCK_PARAGRAPH;
+      line_block.content = line;
+    }
+  }
+  else
+  {
+    line_block.type = BLOCK_PARAGRAPH;
+    line_block.content = line;
   }
 
-  return;
+  render_block(&line_block, ctx);
 }
 
 int process_fptr(FILE *fptr)
