@@ -32,35 +32,60 @@ typedef struct
   int identation_level;
 } MarkdownContext;
 
-// void render_header(const char *line, int level)
-// {
-//   const char *color;
+void render_header(const LineBlock *line_block)
+{
+  const char *color;
 
-//   switch (level)
-//   {
-//   case 1:
-//     color = ANSI_BLUE;
-//     break;
-//   case 2:
-//     color = ANSI_CYAN;
-//     break;
-//   case 3:
-//     color = ANSI_YELLOW;
-//     break;
-//   default:
-//     color = ANSI_RESET;
-//     break;
-//   }
+  switch (line_block->level)
+  {
+  case 1:
+    color = ANSI_BLUE;
+    break;
+  case 2:
+    color = ANSI_CYAN;
+    break;
+  case 3:
+    color = ANSI_YELLOW;
+    break;
+  default:
+    color = ANSI_RESET;
+    break;
+  }
 
-//   const char *fline = line + level + 1;
-//   printf("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
-// }
+  const char *fline = line_block->content;
+  printf("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
+}
 
-void render_block(const LineBlock *line_block, const MarkdownContext *ctx) {}
+void render_block(const LineBlock *line_block, const MarkdownContext *ctx)
+{
+  switch (line_block->type)
+  {
+  case BLOCK_HEADING:
+  {
+    render_header(line_block);
+    break;
+  }
+  case BLOCK_CODE:
+  {
+    break;
+  }
+  case BLOCK_PARAGRAPH:
+  {
+    printf("%s", line_block->content);
+    break;
+  }
+  case BLOCK_BLANK:
+  {
+    printf("\n");
+    break;
+  }
+  }
+}
 
 void process_line(char *line, MarkdownContext *ctx)
 {
   LineBlock line_block = {0};
+  line_block.content = line;
 
   if (line[0] == '\n' || line[0] == '\r' || line[0] == '\0')
   {
@@ -80,7 +105,6 @@ void process_line(char *line, MarkdownContext *ctx)
   if (ctx->is_code_block)
   {
     line_block.type = BLOCK_CODE;
-    line_block.content = line;
     render_block(&line_block, ctx);
     return;
   }
