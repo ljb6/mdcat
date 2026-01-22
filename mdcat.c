@@ -9,7 +9,8 @@
 #define ANSI_CYAN "\033[36m"
 #define ANSI_YELLOW "\033[33m"
 #define ANSI_BLUE "\033[34m"
-
+#define ANSI_BG_GRAY "\033[100m" // fundo cinza escuro
+#define ANSI_FG_WHITE "\033[97m"
 typedef enum
 {
   BLOCK_HEADING,
@@ -67,6 +68,8 @@ void render_block(const LineBlock *line_block, const MarkdownContext *ctx)
   }
   case BLOCK_CODE:
   {
+    printf("%s%s%s%s", ANSI_BG_GRAY, ANSI_FG_WHITE, line_block->content, ANSI_RESET);
+    
     break;
   }
   case BLOCK_PARAGRAPH:
@@ -96,8 +99,6 @@ void process_line(char *line, MarkdownContext *ctx)
 
   if (strncmp(line, "```", 3) == 0)
   {
-    line_block.type = BLOCK_CODE;
-    render_block(&line_block, ctx);
     ctx->is_code_block = !ctx->is_code_block;
     return;
   }
