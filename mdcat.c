@@ -3,14 +3,21 @@
 #include <string.h>
 
 #define MAX_LINE_LENGTH 4096
+#define MAX_CODE_LINES 100
 
+/* line styles */
 #define ANSI_RESET "\033[0m"
 #define ANSI_BOLD "\033[1m"
-#define ANSI_CYAN "\033[36m"
-#define ANSI_YELLOW "\033[33m"
+
+/* foreground colors */
 #define ANSI_BLUE "\033[34m"
-#define ANSI_BG_GRAY "\033[100m" // fundo cinza escuro
+#define ANSI_CYAN "\033[36m"
 #define ANSI_FG_WHITE "\033[97m"
+#define ANSI_YELLOW "\033[33m"
+
+/* background colors */
+#define ANSI_BG_GRAY "\033[100m"
+
 typedef enum
 {
   BLOCK_HEADING,
@@ -29,6 +36,9 @@ typedef struct
 typedef struct
 {
   int is_code_block;
+  char code_accumulator[MAX_CODE_LINES][MAX_LINE_LENGTH];
+  int current_code_line;
+  int max_width;
   int is_quote_block;
   int identation_level;
 } MarkdownContext;
@@ -69,7 +79,7 @@ void render_block(const LineBlock *line_block, const MarkdownContext *ctx)
   case BLOCK_CODE:
   {
     printf("%s%s%s%s", ANSI_BG_GRAY, ANSI_FG_WHITE, line_block->content, ANSI_RESET);
-    
+
     break;
   }
   case BLOCK_PARAGRAPH:
@@ -83,6 +93,29 @@ void render_block(const LineBlock *line_block, const MarkdownContext *ctx)
     break;
   }
   }
+}
+
+void render_accumulated_code(MarkdownContext *ctx)
+{
+  for (int i = 0; i < ctx->current_code_line; i++)
+  {
+    int current_len = strlen(ctx->code_accumulator[i]);
+    int padding_needed = ctx->max_width - current_len;
+
+    printf("%s%s ", ANSI_BG_GRAY, ANSI_FG_WHITE);
+
+    printf("%s", ctx->code_accumulator[i]);
+
+    for (int j = 0; j < padding_needed; j++)
+    {
+      putchar(' ');
+    }
+
+    printf(" %s\n", ANSI_RESET);
+  }
+
+  ctx->current_code_line = 0;
+  ctx->max_width = 0;
 }
 
 void process_line(char *line, MarkdownContext *ctx)
@@ -99,14 +132,30 @@ void process_line(char *line, MarkdownContext *ctx)
 
   if (strncmp(line, "```", 3) == 0)
   {
+    if (ctx->is_code_block)
+    {
+      render_accumulated_code(ctx);
+    }
     ctx->is_code_block = !ctx->is_code_block;
     return;
   }
 
   if (ctx->is_code_block)
   {
-    line_block.type = BLOCK_CODE;
-    render_block(&line_block, ctx);
+    /* removes null terminator */
+    line[strcspn(line, "\n")] = 0;
+    line[strcspn(line, "\r")] = 0;
+
+    if (ctx->current_code_line < MAX_CODE_LINES)
+    {
+      strcpy(ctx->code_accumulator[ctx->current_code_line], line);
+
+      int len = strlen(line);
+      if (len > ctx->max_width)
+        ctx->max_width = len;
+
+      ctx->current_code_line++;
+    }
     return;
   }
 
@@ -124,7 +173,6 @@ void process_line(char *line, MarkdownContext *ctx)
     }
     else
     {
-      // Se for algo como "#Texto", tratamos como parágrafo comum
       line_block.type = BLOCK_PARAGRAPH;
       line_block.content = line;
     }
