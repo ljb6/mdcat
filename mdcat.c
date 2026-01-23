@@ -225,7 +225,11 @@ int process_file(const char *filename)
 
   process_fptr(fptr);
 
-  fclose(fptr);
+  if (fclose(fptr) == EOF)
+  {
+    fprintf(stderr, "warning: failed to close file %s\n", filename);
+  }
+
   return EXIT_SUCCESS;
 }
 
