@@ -1,0 +1,16 @@
+name: Build (macOS)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build with make
+        run: make
