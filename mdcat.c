@@ -220,6 +220,7 @@ int process_file(const char *filename)
   if (strstr(filename, ".md") == NULL)
   {
     fprintf(stderr, "Invalid file format. Use a .md file\n");
+    return EXIT_FAILURE;
   }
 
   process_fptr(fptr);
