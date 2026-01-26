@@ -1,0 +1,7 @@
+mdcat
+mdcat_sanitize
+*.dSYM/
+*.o
+.DS_Store
+*.out
+*.exe
