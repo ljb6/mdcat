@@ -209,19 +209,19 @@ int process_fptr(FILE *fptr)
 
 int process_file(const char *filename)
 {
-  FILE *fptr = fopen(filename, "r");
-
-  if (fptr == NULL)
-  {
-    fprintf(stderr, "Error while opening file %s\n", filename);
-    return EXIT_FAILURE;
-  }
-
   int len = strlen(filename);
   
   if (len < 3 || strcmp(filename + len - 3, ".md") != 0)
   {
     fprintf(stderr, "Invalid file format. Use a .md file\n");
+    return EXIT_FAILURE;
+  }
+
+  FILE *fptr = fopen(filename, "r");
+
+  if (fptr == NULL)
+  {
+    fprintf(stderr, "Error while opening file %s\n", filename);
     return EXIT_FAILURE;
   }
 
