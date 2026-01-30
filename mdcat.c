@@ -67,7 +67,7 @@ void render_header(const LineBlock *line_block)
   printf("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
 }
 
-void render_block(const LineBlock *line_block, const MarkdownContext *ctx)
+void render_block(const LineBlock *line_block)
 {
   switch (line_block->type)
   {
@@ -126,7 +126,7 @@ void process_line(char *line, MarkdownContext *ctx)
   if (line[0] == '\n' || line[0] == '\r' || line[0] == '\0')
   {
     line_block.type = BLOCK_BLANK;
-    render_block(&line_block, ctx);
+    render_block(&line_block);
     return;
   }
 
@@ -183,7 +183,7 @@ void process_line(char *line, MarkdownContext *ctx)
     line_block.content = line;
   }
 
-  render_block(&line_block, ctx);
+  render_block(&line_block);
 }
 
 int process_fptr(FILE *fptr)
