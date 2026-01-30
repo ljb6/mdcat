@@ -190,7 +190,7 @@ void process_line(char *line, MarkdownContext *ctx)
   render_block(&line_block);
 }
 
-int process_fptr(FILE *fptr)
+void process_fptr(FILE *fptr)
 {
   char line[MAX_LINE_LENGTH];
   MarkdownContext ctx = {0};
@@ -202,23 +202,21 @@ int process_fptr(FILE *fptr)
     if (line_len > 0 && line[line_len - 1] != '\n' && !feof(fptr))
     {
       fprintf(stderr, "Error: file has lines too long\n");
-      return EXIT_FAILURE;
+      exit(EXIT_FAILURE);
     }
 
     process_line(line, &ctx);
   }
-
-  return EXIT_SUCCESS;
 }
 
-int process_file(const char *filename)
+void process_file(const char *filename)
 {
   int len = strlen(filename);
   
   if (len < 3 || strcmp(filename + len - 3, ".md") != 0)
   {
     fprintf(stderr, "Invalid file format. Use a .md file\n");
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
 
   FILE *fptr = fopen(filename, "r");
@@ -226,7 +224,7 @@ int process_file(const char *filename)
   if (fptr == NULL)
   {
     fprintf(stderr, "Error while opening file %s\n", filename);
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
 
   process_fptr(fptr);
@@ -235,8 +233,6 @@ int process_file(const char *filename)
   {
     fprintf(stderr, "warning: failed to close file %s\n", filename);
   }
-
-  return EXIT_SUCCESS;
 }
 
 int main(int argc, char *argv[])
@@ -244,7 +240,7 @@ int main(int argc, char *argv[])
   if (argc != 2)
   {
     fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
 
   process_file(argv[1]);
