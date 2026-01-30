@@ -155,6 +155,10 @@ void process_line(char *line, MarkdownContext *ctx)
         ctx->max_width = len;
 
       ctx->current_code_line++;
+    } else {
+      fprintf(stderr, "Error: code block exceeds maximum limit of %d lines\n", 
+            MAX_CODE_LINES);
+      exit(EXIT_FAILURE);
     }
     return;
   }
