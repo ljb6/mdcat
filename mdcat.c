@@ -40,7 +40,7 @@ typedef struct
   int current_code_line;
   int max_width;
   int is_quote_block;
-  int identation_level;
+  int indentation_level;
 } MarkdownContext;
 
 void render_header(const LineBlock *line_block)
