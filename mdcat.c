@@ -212,8 +212,18 @@ void process_fptr(FILE *fptr)
 void process_file(const char *filename)
 {
   int len = strlen(filename);
+
+  if (len < 3)
+  {
+    fprintf(stderr, "Filename too short. Use a .md file\n");
+    exit(EXIT_FAILURE);
+  }
   
-  if (len < 3 || strcmp(filename + len - 3, ".md") != 0)
+  /* handle paths with query-like suffixes */
+  const char *md_lower = strstr(filename, ".md");
+  const char *md_upper = strstr(filename, ".MD");
+  
+  if (md_lower == NULL && md_upper == NULL)
   {
     fprintf(stderr, "Invalid file format. Use a .md file\n");
     exit(EXIT_FAILURE);
