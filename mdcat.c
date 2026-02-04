@@ -18,8 +18,7 @@
 /* background colors */
 #define ANSI_BG_GRAY "\033[100m"
 
-typedef enum
-{
+typedef enum {
   BLOCK_HEADING,
   BLOCK_PARAGRAPH,
   BLOCK_LIST,
@@ -27,15 +26,13 @@ typedef enum
   BLOCK_BLANK,
 } BlockType;
 
-typedef struct
-{
+typedef struct {
   BlockType type;
   int level;
   char *content;
 } LineBlock;
 
-typedef struct
-{
+typedef struct {
   int is_code_block;
   char code_accumulator[MAX_CODE_LINES][MAX_LINE_LENGTH];
   int current_code_line;
@@ -44,12 +41,12 @@ typedef struct
   int indentation_level;
 } MarkdownContext;
 
-void render_header(const LineBlock *line_block)
+void
+render_header (const LineBlock *line_block)
 {
   const char *color;
 
-  switch (line_block->level)
-  {
+  switch (line_block->level) {
   case 1:
     color = ANSI_BLUE;
     break;
@@ -65,239 +62,217 @@ void render_header(const LineBlock *line_block)
   }
 
   const char *fline = line_block->content;
-  printf("%s%s%s%s\n", color, ANSI_BOLD, fline, ANSI_RESET);
+  printf ("%s%s%s%s\n", color, ANSI_BOLD, fline, ANSI_RESET);
 }
 
-void render_list(const LineBlock *line_block)
+void
+render_list (const LineBlock *line_block)
 {
   const char *bullet;
   int indent_spaces = line_block->level * 2;
-  
-  switch (line_block->level)
-  {
-    case 0:
-      bullet = "•";  // bullet cheio
-      break;
-    case 1:
-      bullet = "◦";  // bullet vazio
-      break;
-    case 2:
-      bullet = "▪";  // quadrado pequeno
-      break;
-    default:
-      bullet = "▸";  // triângulo
-      break;
+
+  switch (line_block->level) {
+  case 0:
+    bullet = "•"; // bullet cheio
+    break;
+  case 1:
+    bullet = "◦"; // bullet vazio
+    break;
+  case 2:
+    bullet = "▪"; // quadrado pequeno
+    break;
+  default:
+    bullet = "▸"; // triângulo
+    break;
   }
-  
-  printf("%*s%s %s", indent_spaces, "", bullet, line_block->content);
+
+  printf ("%*s%s %s", indent_spaces, "", bullet, line_block->content);
 }
 
-void render_block(const LineBlock *line_block)
+void
+render_block (const LineBlock *line_block)
 {
-  switch (line_block->type)
-  {
-  case BLOCK_HEADING:
-  {
-    render_header(line_block);
+  switch (line_block->type) {
+  case BLOCK_HEADING: {
+    render_header (line_block);
     break;
   }
-  case BLOCK_CODE:
-  {
-    printf("%s%s%s%s", ANSI_BG_GRAY, ANSI_FG_WHITE, line_block->content, ANSI_RESET);
+  case BLOCK_CODE: {
+    printf ("%s%s%s%s", ANSI_BG_GRAY, ANSI_FG_WHITE, line_block->content,
+            ANSI_RESET);
     break;
   }
-  case BLOCK_PARAGRAPH:
-  {
-    printf("%s", line_block->content);
+  case BLOCK_PARAGRAPH: {
+    printf ("%s", line_block->content);
     break;
   }
-  case BLOCK_BLANK:
-  {
-    printf("\n");
+  case BLOCK_BLANK: {
+    printf ("\n");
     break;
   }
-  case BLOCK_LIST:
-  {
-    render_list(line_block);
+  case BLOCK_LIST: {
+    render_list (line_block);
     break;
   }
   }
 }
 
-void render_accumulated_code(MarkdownContext *ctx)
+void
+render_accumulated_code (MarkdownContext *ctx)
 {
-  for (int i = 0; i < ctx->current_code_line; i++)
-  {
-    int current_len = strlen(ctx->code_accumulator[i]);
+  for (int i = 0; i < ctx->current_code_line; i++) {
+    int current_len = strlen (ctx->code_accumulator[i]);
     int padding_needed = ctx->max_width - current_len;
 
-    printf("%s%s ", ANSI_BG_GRAY, ANSI_FG_WHITE);
+    printf ("%s%s ", ANSI_BG_GRAY, ANSI_FG_WHITE);
 
-    printf("%s", ctx->code_accumulator[i]);
+    printf ("%s", ctx->code_accumulator[i]);
 
-    for (int j = 0; j < padding_needed; j++)
-    {
-      putchar(' ');
+    for (int j = 0; j < padding_needed; j++) {
+      putchar (' ');
     }
 
-    printf(" %s\n", ANSI_RESET);
+    printf (" %s\n", ANSI_RESET);
   }
 
   ctx->current_code_line = 0;
   ctx->max_width = 0;
 }
 
-void process_line(char *line, MarkdownContext *ctx)
+void
+process_line (char *line, MarkdownContext *ctx)
 {
-  LineBlock line_block = {0};
+  LineBlock line_block = { 0 };
   line_block.content = line;
 
-  if (line[0] == '\n' || line[0] == '\r' || line[0] == '\0')
-  {
+  if (line[0] == '\n' || line[0] == '\r' || line[0] == '\0') {
     line_block.type = BLOCK_BLANK;
-    render_block(&line_block);
+    render_block (&line_block);
     return;
   }
 
-  if (strncmp(line, "```", 3) == 0)
-  {
-    if (ctx->is_code_block)
-    {
-      render_accumulated_code(ctx);
+  if (strncmp (line, "```", 3) == 0) {
+    if (ctx->is_code_block) {
+      render_accumulated_code (ctx);
     }
     ctx->is_code_block = !ctx->is_code_block;
     return;
   }
 
-  if (ctx->is_code_block)
-  {
+  if (ctx->is_code_block) {
     /* removes null terminator */
-    line[strcspn(line, "\n")] = 0;
-    line[strcspn(line, "\r")] = 0;
+    line[strcspn (line, "\n")] = 0;
+    line[strcspn (line, "\r")] = 0;
 
-    if (ctx->current_code_line < MAX_CODE_LINES)
-    {
-      strcpy(ctx->code_accumulator[ctx->current_code_line], line);
+    if (ctx->current_code_line < MAX_CODE_LINES) {
+      strcpy (ctx->code_accumulator[ctx->current_code_line], line);
 
-      int len = strlen(line);
+      int len = strlen (line);
       if (len > ctx->max_width)
         ctx->max_width = len;
 
       ctx->current_code_line++;
     } else {
-      fprintf(stderr, "Error: code block exceeds maximum limit of %d lines\n", 
-            MAX_CODE_LINES);
-      exit(EXIT_FAILURE);
+      fprintf (stderr, "Error: code block exceeds maximum limit of %d lines\n",
+               MAX_CODE_LINES);
+      exit (EXIT_FAILURE);
     }
 
     return;
   }
 
-  if (line[0] == '#')
-  {
+  if (line[0] == '#') {
     int level = 0;
     while (line[level] == '#')
       level++;
 
-    if (line[level] == ' ')
-    {
+    if (line[level] == ' ') {
       line_block.level = level;
       line_block.type = BLOCK_HEADING;
       line_block.content = line + level + 1;
-    }
-    else
-    {
+    } else {
       line_block.type = BLOCK_PARAGRAPH;
       line_block.content = line;
     }
-  }
-  else
-  {
+  } else {
     /* Detectar lista */
-    int indent = strspn(line, " ");
+    int indent = strspn (line, " ");
     char *content = line + indent;
 
-    if ((content[0] == '-' || content[0] == '*' || content[0] == '+') 
-        && content[1] == ' ')
-    {
+    if ((content[0] == '-' || content[0] == '*' || content[0] == '+')
+        && content[1] == ' ') {
       line_block.type = BLOCK_LIST;
       line_block.level = indent / 2;
       line_block.content = content + 2;
-    }
-    else
-    {
+    } else {
       line_block.type = BLOCK_PARAGRAPH;
       line_block.content = line;
     }
   }
 
-  render_block(&line_block);
+  render_block (&line_block);
 }
 
-void process_fptr(FILE *fptr)
+void
+process_fptr (FILE *fptr)
 {
   char line[MAX_LINE_LENGTH];
-  MarkdownContext ctx = {0};
+  MarkdownContext ctx = { 0 };
 
-  while (fgets(line, sizeof(line), fptr))
-  {
-    size_t line_len = strlen(line);
+  while (fgets (line, sizeof (line), fptr)) {
+    size_t line_len = strlen (line);
 
-    if (line_len > 0 && line[line_len - 1] != '\n' && !feof(fptr))
-    {
-      fprintf(stderr, "Error: file has lines too long\n");
-      exit(EXIT_FAILURE);
+    if (line_len > 0 && line[line_len - 1] != '\n' && !feof (fptr)) {
+      fprintf (stderr, "Error: file has lines too long\n");
+      exit (EXIT_FAILURE);
     }
 
-    process_line(line, &ctx);
+    process_line (line, &ctx);
   }
 }
 
-void process_file(const char *filename)
+void
+process_file (const char *filename)
 {
-  int len = strlen(filename);
+  int len = strlen (filename);
 
-  if (len < 3)
-  {
-    fprintf(stderr, "Filename too short. Use a .md file\n");
-    exit(EXIT_FAILURE);
+  if (len < 3) {
+    fprintf (stderr, "Filename too short. Use a .md file\n");
+    exit (EXIT_FAILURE);
   }
-  
+
   /* handle paths with query-like suffixes */
-  const char *md_lower = strstr(filename, ".md");
-  const char *md_upper = strstr(filename, ".MD");
-  
-  if (md_lower == NULL && md_upper == NULL)
-  {
-    fprintf(stderr, "Invalid file format. Use a .md file\n");
-    exit(EXIT_FAILURE);
+  const char *md_lower = strstr (filename, ".md");
+  const char *md_upper = strstr (filename, ".MD");
+
+  if (md_lower == NULL && md_upper == NULL) {
+    fprintf (stderr, "Invalid file format. Use a .md file\n");
+    exit (EXIT_FAILURE);
   }
 
-  FILE *fptr = fopen(filename, "r");
+  FILE *fptr = fopen (filename, "r");
 
-  if (fptr == NULL)
-  {
-    fprintf(stderr, "Error while opening file %s\n", filename);
-    exit(EXIT_FAILURE);
+  if (fptr == NULL) {
+    fprintf (stderr, "Error while opening file %s\n", filename);
+    exit (EXIT_FAILURE);
   }
 
-  process_fptr(fptr);
+  process_fptr (fptr);
 
-  if (fclose(fptr) == EOF)
-  {
-    fprintf(stderr, "warning: failed to close file %s\n", filename);
+  if (fclose (fptr) == EOF) {
+    fprintf (stderr, "warning: failed to close file %s\n", filename);
   }
 }
 
-int main(int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
-  if (argc != 2)
-  {
-    fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
-    exit(EXIT_FAILURE);
+  if (argc != 2) {
+    fprintf (stderr, "Usage: %s <filename>\n", argv[0]);
+    exit (EXIT_FAILURE);
   }
 
-  process_file(argv[1]);
+  process_file (argv[1]);
 
   return EXIT_SUCCESS;
 }
