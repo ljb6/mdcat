@@ -22,6 +22,7 @@ typedef enum
 {
   BLOCK_HEADING,
   BLOCK_PARAGRAPH,
+  BLOCK_LIST,
   BLOCK_CODE,
   BLOCK_BLANK,
 } BlockType;
@@ -67,6 +68,30 @@ void render_header(const LineBlock *line_block)
   printf("%s%s%s%s\n", color, ANSI_BOLD, fline, ANSI_RESET);
 }
 
+void render_list(const LineBlock *line_block)
+{
+  const char *bullet;
+  int indent_spaces = line_block->level * 2;
+  
+  switch (line_block->level)
+  {
+    case 0:
+      bullet = "•";  // bullet cheio
+      break;
+    case 1:
+      bullet = "◦";  // bullet vazio
+      break;
+    case 2:
+      bullet = "▪";  // quadrado pequeno
+      break;
+    default:
+      bullet = "▸";  // triângulo
+      break;
+  }
+  
+  printf("%*s%s %s", indent_spaces, "", bullet, line_block->content);
+}
+
 void render_block(const LineBlock *line_block)
 {
   switch (line_block->type)
@@ -79,7 +104,6 @@ void render_block(const LineBlock *line_block)
   case BLOCK_CODE:
   {
     printf("%s%s%s%s", ANSI_BG_GRAY, ANSI_FG_WHITE, line_block->content, ANSI_RESET);
-
     break;
   }
   case BLOCK_PARAGRAPH:
@@ -90,6 +114,11 @@ void render_block(const LineBlock *line_block)
   case BLOCK_BLANK:
   {
     printf("\n");
+    break;
+  }
+  case BLOCK_LIST:
+  {
+    render_list(line_block);
     break;
   }
   }
@@ -160,6 +189,7 @@ void process_line(char *line, MarkdownContext *ctx)
             MAX_CODE_LINES);
       exit(EXIT_FAILURE);
     }
+
     return;
   }
 
@@ -183,8 +213,22 @@ void process_line(char *line, MarkdownContext *ctx)
   }
   else
   {
-    line_block.type = BLOCK_PARAGRAPH;
-    line_block.content = line;
+    /* Detectar lista */
+    int indent = strspn(line, " ");
+    char *content = line + indent;
+
+    if ((content[0] == '-' || content[0] == '*' || content[0] == '+') 
+        && content[1] == ' ')
+    {
+      line_block.type = BLOCK_LIST;
+      line_block.level = indent / 2;
+      line_block.content = content + 2;
+    }
+    else
+    {
+      line_block.type = BLOCK_PARAGRAPH;
+      line_block.content = line;
+    }
   }
 
   render_block(&line_block);
