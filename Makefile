@@ -12,3 +12,8 @@ mdcat: mdcat.c
 
 sanitize: mdcat.c
 	$(CC) $(CFLAGS) $(SANITIZE) -o mdcat_sanitize mdcat.c
+
+format:
+	clang-format -i *.c
+
+.PHONY: format
