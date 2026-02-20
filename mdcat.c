@@ -62,7 +62,7 @@ render_header (const LineBlock *line_block)
   }
 
   const char *fline = line_block->content;
-  printf ("%s%s%s%s\n", color, ANSI_BOLD, fline, ANSI_RESET);
+  printf ("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
 }
 
 void
