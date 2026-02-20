@@ -37,8 +37,6 @@ typedef struct {
   char code_accumulator[MAX_CODE_LINES][MAX_LINE_LENGTH];
   int current_code_line;
   int max_width;
-  int is_quote_block;
-  int indentation_level;
 } MarkdownContext;
 
 void
@@ -73,16 +71,16 @@ render_list (const LineBlock *line_block)
 
   switch (line_block->level) {
   case 0:
-    bullet = "•"; // bullet cheio
+    bullet = "•";
     break;
   case 1:
-    bullet = "◦"; // bullet vazio
+    bullet = "◦";
     break;
   case 2:
-    bullet = "▪"; // quadrado pequeno
+    bullet = "▪";
     break;
   default:
-    bullet = "▸"; // triângulo
+    bullet = "▸";
     break;
   }
 
@@ -195,7 +193,6 @@ process_line (char *line, MarkdownContext *ctx)
       line_block.content = line;
     }
   } else {
-    /* Detectar lista */
     int indent = strspn (line, " ");
     char *content = line + indent;
 
