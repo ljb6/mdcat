@@ -18,20 +18,6 @@
 /* background colors */
 #define ANSI_BG_GRAY "\033[100m"
 
-typedef enum {
-  BLOCK_HEADING,
-  BLOCK_PARAGRAPH,
-  BLOCK_LIST,
-  BLOCK_CODE,
-  BLOCK_BLANK,
-} BlockType;
-
-typedef struct {
-  BlockType type;
-  int level;
-  char *content;
-} LineBlock;
-
 typedef struct {
   int is_code_block;
   char code_accumulator[MAX_CODE_LINES][MAX_LINE_LENGTH];
@@ -40,11 +26,11 @@ typedef struct {
 } MarkdownContext;
 
 void
-render_header (const LineBlock *line_block)
+render_header (char *content, int level)
 {
   const char *color;
 
-  switch (line_block->level) {
+  switch (level) {
   case 1:
     color = ANSI_BLUE;
     break;
@@ -59,17 +45,17 @@ render_header (const LineBlock *line_block)
     break;
   }
 
-  const char *fline = line_block->content;
+  const char *fline = content;
   printf ("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
 }
 
 void
-render_list (const LineBlock *line_block)
+render_list (char *content, int level)
 {
   const char *bullet;
-  int indent_spaces = line_block->level * 2;
+  int indent_spaces = level * 2;
 
-  switch (line_block->level) {
+  switch (level) {
   case 0:
     bullet = "•";
     break;
@@ -84,35 +70,7 @@ render_list (const LineBlock *line_block)
     break;
   }
 
-  printf ("%*s%s %s", indent_spaces, "", bullet, line_block->content);
-}
-
-void
-render_block (const LineBlock *line_block)
-{
-  switch (line_block->type) {
-  case BLOCK_HEADING: {
-    render_header (line_block);
-    break;
-  }
-  case BLOCK_CODE: {
-    printf ("%s%s%s%s", ANSI_BG_GRAY, ANSI_FG_WHITE, line_block->content,
-            ANSI_RESET);
-    break;
-  }
-  case BLOCK_PARAGRAPH: {
-    printf ("%s", line_block->content);
-    break;
-  }
-  case BLOCK_BLANK: {
-    printf ("\n");
-    break;
-  }
-  case BLOCK_LIST: {
-    render_list (line_block);
-    break;
-  }
-  }
+  printf ("%*s%s %s", indent_spaces, "", bullet, content + 2);
 }
 
 void
@@ -140,12 +98,8 @@ render_accumulated_code (MarkdownContext *ctx)
 void
 process_line (char *line, MarkdownContext *ctx)
 {
-  LineBlock line_block = { 0 };
-  line_block.content = line;
-
   if (line[0] == '\n' || line[0] == '\r' || line[0] == '\0') {
-    line_block.type = BLOCK_BLANK;
-    render_block (&line_block);
+    printf ("\n");
     return;
   }
 
@@ -185,12 +139,12 @@ process_line (char *line, MarkdownContext *ctx)
       level++;
 
     if (line[level] == ' ') {
-      line_block.level = level;
-      line_block.type = BLOCK_HEADING;
-      line_block.content = line + level + 1;
+      char *content = line + level + 1;
+      render_header (content, level);
+      return;
     } else {
-      line_block.type = BLOCK_PARAGRAPH;
-      line_block.content = line;
+      printf ("%s", line);
+      return;
     }
   } else {
     int indent = strspn (line, " ");
@@ -198,16 +152,14 @@ process_line (char *line, MarkdownContext *ctx)
 
     if ((content[0] == '-' || content[0] == '*' || content[0] == '+')
         && content[1] == ' ') {
-      line_block.type = BLOCK_LIST;
-      line_block.level = indent / 2;
-      line_block.content = content + 2;
+      int level = indent / 2;
+      render_list (content, level);
+      return;
     } else {
-      line_block.type = BLOCK_PARAGRAPH;
-      line_block.content = line;
+      printf ("%s", line);
+      return;
     }
   }
-
-  render_block (&line_block);
 }
 
 void
