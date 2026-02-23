@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +9,9 @@
 /* line styles */
 #define ANSI_RESET "\033[0m"
 #define ANSI_BOLD "\033[1m"
+#define ANSI_ITALIC "\033[3m"
+#define ANSI_STRIKETHROUGH "\033[9m"
+#define ANSI_DIM "\033[2m"
 
 /* foreground colors */
 #define ANSI_BLUE "\033[34m"
@@ -24,6 +28,94 @@ typedef struct {
   int current_code_line;
   int max_width;
 } MarkdownContext;
+
+int
+find_closing (const char *text, int start, char *marker, int marker_len)
+{
+  for (int i = start; i < (int)strlen (text); i++) {
+    if (strncmp (&text[i], marker, marker_len) == 0) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+void
+render_inline (const char *text, const char *base_style)
+{
+  for (int i = 0; i < (int)strlen (text); i++) {
+    if (text[i] == '`') {
+      int j = find_closing (text, i + 1, "`", 1);
+      if (j != -1 && j > i + 1) {
+        printf ("%s%s", ANSI_BG_GRAY, ANSI_FG_WHITE);
+        printf ("%.*s", j - (i + 1), &text[i + 1]);
+        printf ("%s%s", ANSI_RESET, base_style);
+        i = j;
+      } else {
+        putchar ('`');
+      }
+    } else if (text[i] == '*' && text[i + 1] == '*' && text[i + 2] == '*') {
+      int j = find_closing (text, i + 3, "***", 3);
+      if (j != -1) {
+        printf ("%s%s", ANSI_BOLD, ANSI_ITALIC);
+        printf ("%.*s", j - (i + 3), &text[i + 3]);
+        printf ("%s%s", ANSI_RESET, base_style);
+        i = j + 2;
+      } else {
+        putchar (text[i]);
+      }
+    } else if (text[i] == '*' && text[i + 1] == '*') {
+      int j = find_closing (text, i + 2, "**", 2);
+      if (j != -1) {
+        printf ("%s", ANSI_BOLD);
+        printf ("%.*s", j - (i + 2), &text[i + 2]);
+        printf ("%s%s", ANSI_RESET, base_style);
+        i = j + 1;
+      } else {
+        putchar (text[i]);
+      }
+    } else if (text[i] == '*') {
+      int j = find_closing (text, i + 1, "*", 1);
+      if (j != -1) {
+        printf ("%s", ANSI_ITALIC);
+        printf ("%.*s", j - (i + 1), &text[i + 1]);
+        printf ("%s%s", ANSI_RESET, base_style);
+        i = j;
+      } else {
+        putchar (text[i]);
+      }
+    } else if (text[i] == '~' && text[i + 1] == '~') {
+      int j = find_closing (text, i + 2, "~~", 2);
+      if (j != -1) {
+        printf ("%s", ANSI_STRIKETHROUGH);
+        printf ("%.*s", j - (i + 2), &text[i + 2]);
+        printf ("%s%s", ANSI_RESET, base_style);
+        i = j + 1;
+      } else {
+        putchar (text[i]);
+      }
+    } else if (text[i] == '[') {
+      int label_end = find_closing (text, i + 1, "]", 1);
+      if (label_end != -1 && text[label_end + 1] == '(') {
+        int url_end = find_closing (text, label_end + 2, ")", 1);
+        if (url_end != -1) {
+          printf ("%s%s%.*s%s%s", ANSI_CYAN, ANSI_BOLD, label_end - (i + 1),
+                  &text[i + 1], ANSI_RESET, base_style);
+          printf (" (%s%.*s%s%s)", ANSI_DIM, url_end - (label_end + 2),
+                  &text[label_end + 2], ANSI_RESET, base_style);
+          i = url_end;
+        } else {
+          putchar (text[i]);
+        }
+      } else {
+        putchar (text[i]);
+      }
+    } else {
+      putchar (text[i]);
+    }
+  }
+}
 
 void
 render_header (char *content, int level)
@@ -45,8 +137,11 @@ render_header (char *content, int level)
     break;
   }
 
-  const char *fline = content;
-  printf ("%s%s%s%s", color, ANSI_BOLD, fline, ANSI_RESET);
+  char restore[64];
+  snprintf (restore, sizeof (restore), "%s%s", color, ANSI_BOLD);
+  printf ("%s%s", color, ANSI_BOLD);
+  render_inline (content, restore);
+  printf ("%s", ANSI_RESET);
 }
 
 void
@@ -70,7 +165,8 @@ render_list (char *content, int level)
     break;
   }
 
-  printf ("%*s%s %s", indent_spaces, "", bullet, content + 2);
+  printf ("%*s%s ", indent_spaces, "", bullet);
+  render_inline (content + 2, "");
 }
 
 void
@@ -143,7 +239,7 @@ process_line (char *line, MarkdownContext *ctx)
       render_header (content, level);
       return;
     } else {
-      printf ("%s", line);
+      render_inline (line, "");
       return;
     }
   } else {
@@ -156,7 +252,7 @@ process_line (char *line, MarkdownContext *ctx)
       render_list (content, level);
       return;
     } else {
-      printf ("%s", line);
+      render_inline (line, "");
       return;
     }
   }
