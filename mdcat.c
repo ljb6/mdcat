@@ -242,6 +242,11 @@ process_line (char *line, MarkdownContext *ctx)
       render_inline (line, "");
       return;
     }
+  } else if (strncmp (line, "---", 3) == 0 || strncmp (line, "***", 3) == 0
+             || strncmp (line, "___", 3) == 0) {
+    for (int i = 0; i < 72; i++)
+      fputs ("─", stdout);
+    puts ("");
   } else {
     int indent = strspn (line, " ");
     char *content = line + indent;
