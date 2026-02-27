@@ -2,9 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MAX_LINE_LENGTH 4096
-#define MAX_CODE_LINES 100
+static size_t max_code_lines = 100;
 
 /* line styles */
 #define ANSI_RESET "\033[0m"
@@ -24,7 +25,7 @@
 
 typedef struct {
   int is_code_block;
-  char code_accumulator[MAX_CODE_LINES][MAX_LINE_LENGTH];
+  char (*code_accumulator)[MAX_LINE_LENGTH];
   int current_code_line;
   int max_width;
 } MarkdownContext;
@@ -212,7 +213,7 @@ process_line (char *line, MarkdownContext *ctx)
     line[strcspn (line, "\n")] = 0;
     line[strcspn (line, "\r")] = 0;
 
-    if (ctx->current_code_line < MAX_CODE_LINES) {
+    if ((size_t)ctx->current_code_line < max_code_lines) {
       strcpy (ctx->code_accumulator[ctx->current_code_line], line);
 
       int len = strlen (line);
@@ -221,8 +222,8 @@ process_line (char *line, MarkdownContext *ctx)
 
       ctx->current_code_line++;
     } else {
-      fprintf (stderr, "Error: code block exceeds maximum limit of %d lines\n",
-               MAX_CODE_LINES);
+      fprintf (stderr, "Error: code block exceeds maximum limit of %zu lines\n",
+               max_code_lines);
       exit (EXIT_FAILURE);
     }
 
@@ -268,6 +269,12 @@ process_fptr (FILE *fptr)
 {
   char line[MAX_LINE_LENGTH];
   MarkdownContext ctx = { 0 };
+  ctx.code_accumulator
+      = malloc (max_code_lines * sizeof (char[MAX_LINE_LENGTH]));
+  if (ctx.code_accumulator == NULL) {
+    fprintf (stderr, "error: failed to allocate memory for code accumulator\n");
+    exit (EXIT_FAILURE);
+  }
 
   while (fgets (line, sizeof (line), fptr)) {
     size_t line_len = strlen (line);
@@ -317,12 +324,27 @@ process_file (const char *filename)
 int
 main (int argc, char *argv[])
 {
-  if (argc != 2) {
+  if (argc < 2) {
     fprintf (stderr, "Usage: %s <filename>\n", argv[0]);
     exit (EXIT_FAILURE);
   }
 
-  process_file (argv[1]);
+  int opt;
+  while ((opt = getopt (argc, argv, "m:")) != -1) {
+    switch (opt) {
+    case 'm': {
+      unsigned long value = strtoul (optarg, NULL, 10);
+      if (value == 0) {
+        fprintf (stderr, "error: max code lines must be greater than 0\n");
+        exit (EXIT_FAILURE);
+      }
+      max_code_lines = value;
+      break;
+    }
+    }
+  }
+
+  process_file (argv[optind]);
 
   return EXIT_SUCCESS;
 }
