@@ -5,7 +5,7 @@ set -e
 ARGS_FILE="$1"
 TEST_NAME="${ARGS_FILE%.args}"
 EXPECTED="${TEST_NAME}.out"
-BINARY="../mdcat"
+BINARY="${MDCAT_BINARY:-../mdcat}"
 
 if [ ! -f "$ARGS_FILE" ]; then
     echo "FAIL $TEST_NAME: args file not found: $ARGS_FILE"

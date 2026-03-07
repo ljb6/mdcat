@@ -17,6 +17,9 @@ sanitize: mdcat.c
 test: all
 	@cd test && $(MAKE)
 
+test-sanitize: sanitize
+	@cd test && MDCAT_BINARY=../mdcat_sanitize $(MAKE)
+
 format:
 	clang-format -i *.c
 

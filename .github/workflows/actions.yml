@@ -20,7 +20,7 @@ jobs:
         run: make CC=${{ matrix.cc }}
 
   test:
-    runs-on: macos-latest
+    runs-on: ubuntu-24.04
     needs: build-test
 
     steps:
@@ -29,3 +29,25 @@ jobs:
 
       - name: Run tests
         run: make test
+
+  sanitize:
+    runs-on: ubuntu-24.04
+    needs: build-test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests with AddressSanitizer
+        run: make test-sanitize
+
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
+
+      - name: Check formatting
+        run: make format && git diff --exit-code
