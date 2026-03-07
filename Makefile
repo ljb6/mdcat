@@ -18,7 +18,7 @@ test: all
 	@cd test && $(MAKE)
 
 test-sanitize: sanitize
-	@cd test && MDCAT_BINARY=../mdcat_sanitize $(MAKE)
+	@cd test && MDCAT_BINARY=../mdcat_sanitize sh runall.sh
 
 format:
 	clang-format -i *.c
