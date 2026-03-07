@@ -14,3 +14,14 @@ jobs:
 
       - name: Build with make
         run: make
+
+  test:
+    runs-on: macos-latest
+    needs: build-macos
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        run: make test
