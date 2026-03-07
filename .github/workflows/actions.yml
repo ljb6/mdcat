@@ -1,0 +1,31 @@
+name: Build and test mdcat
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build-test:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-22.04, macos-15]
+        cc: [gcc, clang]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: make CC=${{ matrix.cc }}
+
+  test:
+    runs-on: macos-latest
+    needs: build-test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        run: make test
