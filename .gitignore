@@ -4,3 +4,4 @@ mdcat_sanitize
 *.o
 .DS_Store
 *.exe
+*.actual
