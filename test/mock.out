@@ -1,0 +1,10 @@
+[34m[1mHello World
+[0m
+This is a [1mbold[0m and _italic_ test.
+
+• Item one
+• Item two
+  ◦ Nested item
+
+[100m[97m echo "hello" [0m
+[100m[97m x = 42       [0m
